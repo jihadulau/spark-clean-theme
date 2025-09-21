@@ -37,10 +37,12 @@ const CareersDialog = ({ children }: CareersDialogProps) => {
 
       const { data, error } = await supabase.functions.invoke('submit-contact', {
         body: {
-          ...formObject,
+          name: formObject.fullName,
+          email: formObject.email,
+          phone: formObject.mobile,
           subject: `New Cleaning EOI — ${formObject.fullName}`,
-          access_key: "YOUR_WEB3FORMS_ACCESS_KEY", // This should use the same key
-          form_type: "careers"
+          form_type: "careers",
+          ...formObject
         }
       });
 

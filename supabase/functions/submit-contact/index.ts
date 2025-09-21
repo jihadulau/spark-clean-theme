@@ -15,7 +15,8 @@ serve(async (req) => {
   try {
     console.log('Contact form submission received');
     
-    const { name, email, phone, service, message } = await req.json();
+    const requestBody = await req.json();
+    const { name, email, phone, service, message, form_type, subject, ...otherFields } = requestBody;
     
     // Validate required fields
     if (!name || !email || !phone) {
@@ -47,11 +48,68 @@ serve(async (req) => {
     formData.append('name', name.trim());
     formData.append('email', email.trim());
     formData.append('phone', phone.trim());
-    formData.append('subject', `New CleanPro Quote Request - ${service || 'General Inquiry'}`);
     
-    // Create a well-formatted message
-    const messageContent = `
-New quote request from CleanPro website:
+    // Handle different form types
+    if (form_type === 'careers') {
+      formData.append('subject', subject || `New Cleaning EOI — ${name}`);
+      
+      // Create detailed careers message
+      const careersMessage = `
+New employment expression of interest from Cleandigo website:
+
+=== PERSONAL DETAILS ===
+Name: ${name}
+Email: ${email}
+Mobile: ${phone}
+Suburb: ${otherFields.suburb || 'Not provided'}
+Postcode: ${otherFields.postcode || 'Not provided'}
+
+=== WORK PREFERENCES ===
+Preferred Work Type: ${otherFields.workType || 'Not specified'}
+Roles of Interest: ${otherFields.rolesOfInterest || 'Not specified'}
+Availability: ${otherFields.availability || 'Not provided'}
+Desired Hours per Week: ${otherFields.desiredHours || 'Not provided'}
+Earliest Start Date: ${otherFields.startDate || 'Not provided'}
+
+=== WORK AUTHORIZATION ===
+Work Rights in Australia: ${otherFields.workRights || 'Not specified'}
+${otherFields.visaType ? `Visa Type: ${otherFields.visaType}` : ''}
+${otherFields.visaExpiry ? `Visa Expiry: ${otherFields.visaExpiry}` : ''}
+
+=== TRANSPORT & LICENSING ===
+Driver's Licence: ${otherFields.license || 'Not specified'}
+Own Reliable Vehicle: ${otherFields.vehicle || 'Not specified'}
+Distance Willing to Travel: ${otherFields.travelDistance || 'Not specified'}
+
+=== ADDITIONAL INFORMATION ===
+Languages: ${otherFields.languages || 'Not provided'}
+Experience Summary: ${otherFields.experience || 'Not provided'}
+Areas Can Service: ${otherFields.serviceAreas || 'Not provided'}
+
+=== REFERENCES ===
+Referee #1: ${otherFields.referee1 || 'Not provided'}
+Referee #2: ${otherFields.referee2 || 'Not provided'}
+
+=== CERTIFICATIONS ===
+Police Check Status: ${otherFields.policeCheck || 'Not specified'}
+WWCC Status: ${otherFields.wwcc || 'Not specified'}
+
+=== CONTACT PREFERENCES ===
+Contact Preference: ${otherFields.contactPreference || 'Not specified'}
+Best Time to Contact: ${otherFields.contactTime || 'Not specified'}
+Marketing Consent: ${otherFields.marketingConsent === 'on' ? 'Yes' : 'No'}
+
+---
+This application was submitted through the Cleandigo careers portal.
+      `.trim();
+      
+      formData.append('message', careersMessage);
+    } else {
+      // Regular contact form
+      formData.append('subject', `New Cleandigo Quote Request - ${service || 'General Inquiry'}`);
+      
+      const messageContent = `
+New quote request from Cleandigo website:
 
 Customer Details:
 - Name: ${name}
@@ -63,12 +121,14 @@ Customer Message:
 ${message || 'No additional message provided'}
 
 ---
-This message was sent from the CleanPro website contact form.
-    `.trim();
+This message was sent from the Cleandigo website contact form.
+      `.trim();
+      
+      formData.append('message', messageContent);
+    }
     
-    formData.append('message', messageContent);
     formData.append('replyto', email.trim());
-    formData.append('from_name', 'CleanPro Website');
+    formData.append('from_name', 'Cleandigo Website');
     formData.append('botcheck', ''); // Anti-spam field
     
     console.log('Submitting to Web3Forms...');
