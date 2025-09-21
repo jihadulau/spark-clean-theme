@@ -17,11 +17,13 @@ const Contact = () => {
     service: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('submit-contact', {
@@ -58,6 +60,8 @@ const Contact = () => {
         description: "Please check your connection and try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -187,8 +191,9 @@ const Contact = () => {
                   variant="hero"
                   size="xl"
                   className="w-full shadow-medium"
+                  disabled={isSubmitting}
                 >
-                  Get My Free Quote
+                  {isSubmitting ? "Sending..." : "Get My Free Quote"}
                 </Button>
                 
                 <p className="text-sm text-muted-foreground text-center">
