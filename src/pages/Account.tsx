@@ -6,63 +6,54 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, Phone, User, LogOut, Home } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { CalendarDays, Clock, MapPin, Phone, User, LogOut, Home, Star, Receipt, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { useBookings } from '@/hooks/useBookings';
+import BookingCard from '@/components/BookingCard';
 
-interface Booking {
+interface Review {
   id: string;
-  booking_date: string;
-  start_time: string;
-  status: string;
-  total_amount: number;
-  address: string;
-  suburb: string;
-  postcode: string;
-  state: string;
-  booking_items: Array<{
-    quantity: number;
-    services: { name: string };
-  }>;
+  booking_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
 }
 
 const Account: React.FC = () => {
   const { profile, signOut } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { bookings, loading } = useBookings({ customerId: profile?.id });
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    if (profile?.id) {
+      fetchReviews();
+    }
+  }, [profile?.id]);
 
-  const fetchBookings = async () => {
+  const fetchReviews = async () => {
+    if (!profile?.id) return;
+    
     try {
       const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          booking_items (
-            quantity,
-            services (name)
-          )
-        `)
-        .order('booking_date', { ascending: false });
+        .from('reviews')
+        .select('*')
+        .eq('customer_id', profile.id)
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch your bookings.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setBookings(data || []);
+      if (error) throw error;
+      setReviews(data || []);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching reviews:', error);
     }
   };
 
@@ -72,6 +63,42 @@ const Account: React.FC = () => {
       title: "Signed out",
       description: "You have been successfully signed out.",
     });
+  };
+
+  const submitReview = async () => {
+    if (!selectedBooking || !profile?.id) return;
+
+    setReviewLoading(true);
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert([{
+          booking_id: selectedBooking,
+          customer_id: profile.id,
+          rating,
+          comment: comment.trim() || null
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Review submitted",
+        description: "Thank you for your feedback!",
+      });
+
+      setSelectedBooking(null);
+      setRating(5);
+      setComment('');
+      fetchReviews();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit review.",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -91,6 +118,39 @@ const Account: React.FC = () => {
     return status.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+      case 'in_progress':
+        return <Clock className="h-4 w-4 text-blue-600" />;
+      case 'cancelled':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+    }
+  };
+
+  const upcomingBookings = bookings.filter(booking => {
+    const bookingDate = new Date(booking.booking_date);
+    return bookingDate >= new Date() && booking.status !== 'completed' && booking.status !== 'cancelled';
+  });
+
+  const pastBookings = bookings.filter(booking => {
+    const bookingDate = new Date(booking.booking_date);
+    return bookingDate < new Date() || booking.status === 'completed' || booking.status === 'cancelled';
+  });
+
+  const nextBooking = upcomingBookings[0];
+
+  const hasReviewed = (bookingId: string) => {
+    return reviews.some(review => review.booking_id === bookingId);
+  };
+
+  const canReview = (booking: any) => {
+    return booking.status === 'completed' && !hasReviewed(booking.id);
   };
 
   return (
@@ -134,125 +194,312 @@ const Account: React.FC = () => {
               </p>
             </div>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>
-                  Need to make changes to your bookings? Give us a call!
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button asChild className="flex-1">
-                    <a href="tel:+61234567890" className="flex items-center justify-center">
+            {/* Next Booking Card */}
+            {nextBooking && (
+              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <CalendarDays className="h-5 w-5 mr-2 text-primary" />
+                    Your Next Cleaning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm">
+                          <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span className="font-medium">
+                            {new Date(nextBooking.booking_date).toLocaleDateString('en-AU', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>{nextBooking.start_time}</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span className="text-sm">
+                            {nextBooking.address}, {nextBooking.suburb}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          {getStatusIcon(nextBooking.status)}
+                          <Badge className={`ml-2 ${getStatusColor(nextBooking.status)}`}>
+                            {formatStatus(nextBooking.status)}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-primary">
+                            ${nextBooking.total_amount.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Status Timeline */}
+                    <div className="pt-4 border-t">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                        <span>Booking Progress</span>
+                        <span>Updated: {new Date(nextBooking.updated_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {['pending', 'confirmed', 'assigned', 'en_route', 'in_progress', 'completed'].map((status, index) => {
+                          const isActive = nextBooking.status === status;
+                          const isCompleted = ['pending', 'confirmed', 'assigned', 'en_route', 'in_progress', 'completed'].indexOf(nextBooking.status) > index;
+                          
+                          return (
+                            <div key={status} className={`flex-1 h-2 rounded-full ${
+                              isActive ? 'bg-primary' : isCompleted ? 'bg-primary/60' : 'bg-muted'
+                            }`} />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Call Banner */}
+            <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Phone className="h-8 w-8 text-orange-600 mr-3" />
+                    <div>
+                      <h3 className="font-semibold text-orange-900">Need to change your booking?</h3>
+                      <p className="text-sm text-orange-700">Call us for reschedules, cancellations, or special requests</p>
+                    </div>
+                  </div>
+                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
+                    <a href="tel:0420331350" className="flex items-center">
                       <Phone className="h-4 w-4 mr-2" />
-                      Call to Book: (02) 3456 7890
+                      Call Now
                     </a>
                   </Button>
-                  <Button variant="outline" asChild className="flex-1">
-                    <Link to="/#contact" className="flex items-center justify-center">
-                      Get Quote Online
-                    </Link>
-                  </Button>
-                </div>
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> To reschedule or cancel your booking, please call us at{" "}
-                    <a href="tel:+61234567890" className="text-primary font-medium hover:underline">
-                      (02) 3456 7890
-                    </a>
-                    . Our team will be happy to assist you.
-                  </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Bookings */}
+            {/* Bookings Tabs */}
             <Card>
               <CardHeader>
                 <CardTitle>Your Bookings</CardTitle>
                 <CardDescription>
-                  Track the status of your cleaning appointments
+                  Manage your cleaning appointments and history
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : bookings.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No bookings yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Ready to get your space cleaned? Contact us to book your first cleaning service.
-                    </p>
-                    <Button asChild>
-                      <a href="tel:+61234567890">
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call to Book Now
-                      </a>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {bookings.map((booking) => (
-                      <div key={booking.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">
-                                {new Date(booking.booking_date).toLocaleDateString('en-AU', {
-                                  weekday: 'long',
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">
-                                {booking.start_time}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground text-sm">
-                                {booking.address}, {booking.suburb}, {booking.state} {booking.postcode}
-                              </span>
-                            </div>
-                          </div>
-                          <Badge className={getStatusColor(booking.status)}>
-                            {formatStatus(booking.status)}
-                          </Badge>
-                        </div>
+                <Tabs defaultValue="upcoming" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="upcoming">
+                      Upcoming ({upcomingBookings.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="past">
+                      Past ({pastBookings.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="invoices">
+                      <Receipt className="h-4 w-4 mr-1" />
+                      Invoices
+                    </TabsTrigger>
+                    <TabsTrigger value="reviews">
+                      <Star className="h-4 w-4 mr-1" />
+                      Reviews
+                    </TabsTrigger>
+                  </TabsList>
 
-                        <Separator />
+                  <TabsContent value="upcoming" className="space-y-4 mt-6">
+                    {loading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : upcomingBookings.length === 0 ? (
+                      <div className="text-center py-8">
+                        <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">No upcoming bookings</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Ready to schedule your next cleaning?
+                        </p>
+                        <Button asChild>
+                          <a href="tel:0420331350">
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call to Book Now
+                          </a>
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {upcomingBookings.map((booking) => (
+                          <BookingCard key={booking.id} booking={booking} />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
 
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm">Services:</h4>
-                          <div className="space-y-1">
-                            {booking.booking_items?.map((item, index) => (
-                              <div key={index} className="text-sm text-muted-foreground">
-                                {item.services?.name} {item.quantity > 1 && `(${item.quantity}x)`}
+                  <TabsContent value="past" className="space-y-4 mt-6">
+                    {pastBookings.length === 0 ? (
+                      <div className="text-center py-8">
+                        <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">No past bookings</h3>
+                        <p className="text-muted-foreground">
+                          Your completed bookings will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {pastBookings.map((booking) => (
+                          <div key={booking.id} className="relative">
+                            <BookingCard booking={booking} />
+                            {canReview(booking) && (
+                              <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="text-sm font-medium text-green-900">Leave a Review</h4>
+                                    <p className="text-xs text-green-700">Share your experience with this service</p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => setSelectedBooking(booking.id)}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <Star className="h-3 w-3 mr-1" />
+                                    Review
+                                  </Button>
+                                </div>
                               </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="invoices" className="space-y-4 mt-6">
+                    <div className="text-center py-8">
+                      <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">Payment History</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Your invoices and payment history will be available here soon.
+                      </p>
+                      <Button variant="outline" asChild>
+                        <a href="tel:0420331350">
+                          <Phone className="h-4 w-4 mr-2" />
+                          Contact for Payment Info
+                        </a>
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="reviews" className="space-y-4 mt-6">
+                    {reviews.length === 0 ? (
+                      <div className="text-center py-8">
+                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">No reviews yet</h3>
+                        <p className="text-muted-foreground">
+                          Complete a booking to leave your first review.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <div key={review.id} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center">
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`h-4 w-4 ${
+                                        star <= review.rating ? 'text-yellow-500 fill-current' : 'text-gray-300'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="ml-2 text-sm font-medium">{review.rating}/5</span>
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+
+                {/* Review Modal */}
+                {selectedBooking && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <Card className="w-full max-w-md">
+                      <CardHeader>
+                        <CardTitle>Leave a Review</CardTitle>
+                        <CardDescription>
+                          Rate your cleaning service experience
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Rating</Label>
+                          <div className="flex space-x-1 mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onClick={() => setRating(star)}
+                                className="focus:outline-none"
+                              >
+                                <Star
+                                  className={`h-6 w-6 ${
+                                    star <= rating ? 'text-yellow-500 fill-current' : 'text-gray-300'
+                                  }`}
+                                />
+                              </button>
                             ))}
                           </div>
                         </div>
-
-                        <div className="flex justify-between items-center pt-2">
-                          <span className="text-lg font-semibold">
-                            ${booking.total_amount.toFixed(2)} AUD
-                          </span>
-                          <div className="text-sm text-muted-foreground">
-                            Booking #{booking.id.slice(0, 8)}
-                          </div>
+                        <div>
+                          <Label htmlFor="comment">Comment (Optional)</Label>
+                          <Textarea
+                            id="comment"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            placeholder="Tell us about your experience..."
+                            rows={3}
+                          />
                         </div>
-                      </div>
-                    ))}
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              setSelectedBooking(null);
+                              setRating(5);
+                              setComment('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            className="flex-1" 
+                            onClick={submitReview}
+                            disabled={reviewLoading}
+                          >
+                            {reviewLoading ? "Submitting..." : "Submit Review"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
               </CardContent>
