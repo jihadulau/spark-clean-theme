@@ -1,4 +1,7 @@
 import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import PrivacyPolicyDialog from "./PrivacyPolicyDialog";
+import TermsOfServiceDialog from "./TermsOfServiceDialog";
+import CareersDialog from "./CareersDialog";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -140,9 +143,21 @@ const Footer = () => {
             </div>
             
             <div className="flex items-center space-x-6 text-sm text-gray-300">
-              <a href="#" className="hover:text-cleaning-cyan transition-smooth">Privacy Policy</a>
-              <a href="#" className="hover:text-cleaning-cyan transition-smooth">Terms of Service</a>
-              <a href="#" className="hover:text-cleaning-cyan transition-smooth">Careers</a>
+              <PrivacyPolicyDialog>
+                <button className="hover:text-cleaning-cyan transition-smooth">
+                  Privacy Policy
+                </button>
+              </PrivacyPolicyDialog>
+              <TermsOfServiceDialog>
+                <button className="hover:text-cleaning-cyan transition-smooth">
+                  Terms of Service
+                </button>
+              </TermsOfServiceDialog>
+              <CareersDialog>
+                <button className="hover:text-cleaning-cyan transition-smooth">
+                  Careers
+                </button>
+              </CareersDialog>
             </div>
           </div>
           
