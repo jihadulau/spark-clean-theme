@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Phone, Mail, Shield, Sparkles } from "lucide-react";
+import { Menu, X, Phone, Mail, Shield, Sparkles, User, LogOut } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
 
   const navigation = [
     { name: "Home", href: "#home" },
@@ -44,13 +47,34 @@ const Header = () => {
 
           {/* Contact Info & CTA */}
           <div className="hidden lg:flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-cleaning-dark">
-              <Phone className="w-4 h-4 text-primary" />
-              <span>0420 331 350</span>
-            </div>
-            <Button variant="hero" className="px-6 py-2" asChild>
-              <a href="#contact">Get Quote</a>
-            </Button>
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Link 
+                  to={profile?.role === 'admin' ? '/admin' : '/account'} 
+                  className="flex items-center space-x-2 text-cleaning-dark hover:text-primary font-medium"
+                >
+                  <User className="h-4 w-4" />
+                  <span>{profile?.role === 'admin' ? 'Admin' : 'My Account'}</span>
+                </Link>
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center space-x-2 text-sm text-cleaning-dark">
+                  <Phone className="w-4 h-4 text-primary" />
+                  <span>0420 331 350</span>
+                </div>
+                <Button variant="outline" asChild className="mr-2">
+                  <Link to="/signin">Sign In</Link>
+                </Button>
+                <Button variant="hero" className="px-6 py-2" asChild>
+                  <a href="#contact">Get Quote</a>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
