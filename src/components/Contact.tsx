@@ -69,13 +69,13 @@ const Contact = () => {
     {
       icon: Phone,
       title: "Call Us",
-      details: "(555) 123-CLEAN",
+      details: "0420 331 350",
       subtitle: "24/7 Emergency Service"
     },
     {
       icon: Mail,
       title: "Email Us",
-      details: "hello@cleanpro.com",
+      details: "services@cleandigo.com.au",
       subtitle: "Quick response guaranteed"
     },
     {
@@ -100,7 +100,7 @@ const Contact = () => {
             Get Your Free Quote
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Ready to experience the CleanPro difference? Contact us today for a free, 
+            Ready to experience the Cleandigo difference? Contact us today for a free, 
             no-obligation estimate tailored to your specific cleaning needs.
           </p>
         </div>
@@ -230,7 +230,7 @@ const Contact = () => {
             {/* Why Choose Us */}
             <Card className="p-8 hero-gradient text-white shadow-strong">
               <CardContent className="p-0 space-y-6">
-                <h3 className="text-2xl font-bold">Why Choose CleanPro?</h3>
+                <h3 className="text-2xl font-bold">Why Choose Cleandigo?</h3>
                 
                 <div className="space-y-4">
                   {[

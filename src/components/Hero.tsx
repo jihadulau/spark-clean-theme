@@ -50,7 +50,7 @@ const Hero = () => {
               </Button>
               
               <Button variant="cleaning-outline" size="xl" asChild>
-                <a href="tel:(555)123-2532">
+                <a href="tel:+61420331350">
                   <Phone className="w-5 h-5 mr-2" />
                   Call Now
                 </a>
@@ -73,7 +73,7 @@ const Hero = () => {
                   <div className="text-sm text-muted-foreground">Happy Clients</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-cleaning-blue">5+</div>
+                  <div className="text-2xl font-bold text-cleaning-blue">1+</div>
                   <div className="text-sm text-muted-foreground">Years Experience</div>
                 </div>
               </div>

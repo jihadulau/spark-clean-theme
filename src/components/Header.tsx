@@ -22,7 +22,7 @@ const Header = () => {
               <div className="w-8 h-8 bg-secondary rounded-md"></div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-cleaning-dark">CleanPro</h1>
+              <h1 className="text-xl font-bold text-cleaning-dark">Cleandigo</h1>
               <p className="text-sm text-cleaning-blue">Professional Cleaning</p>
             </div>
           </div>
@@ -44,7 +44,7 @@ const Header = () => {
           <div className="hidden lg:flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-cleaning-dark">
               <Phone className="w-4 h-4 text-primary" />
-              <span>(555) 123-CLEAN</span>
+              <span>0420 331 350</span>
             </div>
             <Button variant="hero" className="px-6 py-2" asChild>
               <a href="#contact">Get Quote</a>
@@ -77,7 +77,7 @@ const Header = () => {
               <div className="flex flex-col space-y-3 pt-4 border-t border-cleaning-light">
                 <div className="flex items-center space-x-2 text-sm text-cleaning-dark">
                   <Phone className="w-4 h-4 text-primary" />
-                  <span>(555) 123-CLEAN</span>
+                  <span>0420 331 350</span>
                 </div>
                 <Button variant="hero" className="w-full py-3 rounded-lg" asChild>
                   <a href="#contact">Get Quote</a>

@@ -5,7 +5,7 @@ import { Award, Users, Shield, Clock } from "lucide-react";
 const About = () => {
   const stats = [
     { icon: Users, number: "1000+", label: "Happy Clients" },
-    { icon: Award, number: "5+", label: "Years Experience" },
+    { icon: Award, number: "1+", label: "Years Experience" },
     { icon: Shield, number: "100%", label: "Satisfaction Rate" },
     { icon: Clock, number: "24/7", label: "Emergency Service" }
   ];
@@ -37,7 +37,7 @@ const About = () => {
           <div className="space-y-8 animate-fade-in">
             <div className="space-y-4">
               <Badge className="bg-cleaning-light text-cleaning-blue px-4 py-2">
-                About CleanPro
+                About Cleandigo
               </Badge>
               
               <h2 className="text-4xl lg:text-5xl font-bold text-cleaning-dark">
@@ -45,8 +45,8 @@ const About = () => {
               </h2>
               
               <p className="text-lg text-muted-foreground leading-relaxed">
-                At CleanPro, we believe that a clean environment is essential for health, 
-                productivity, and peace of mind. Since 2019, we've been providing top-quality 
+                At Cleandigo, we believe that a clean environment is essential for health, 
+                productivity, and peace of mind. Since 2024, we've been providing top-quality
                 cleaning services to homes and businesses throughout the area.
               </p>
               

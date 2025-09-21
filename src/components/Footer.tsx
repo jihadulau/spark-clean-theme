@@ -38,13 +38,13 @@ const Footer = () => {
                 <div className="w-8 h-8 bg-secondary rounded-md"></div>
               </div>
               <div>
-                <h2 className="text-xl font-bold">CleanPro</h2>
+                <h2 className="text-xl font-bold">Cleandigo</h2>
                 <p className="text-sm text-gray-300">Professional Cleaning</p>
               </div>
             </div>
             
             <p className="text-gray-300 leading-relaxed">
-              Your trusted cleaning partner since 2019. We provide exceptional 
+              Your trusted cleaning partner since 2024. We provide exceptional 
               cleaning services with a commitment to quality, reliability, and 
               customer satisfaction.
             </p>
@@ -99,7 +99,7 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <Phone className="w-5 h-5 text-cleaning-cyan mt-1 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold">(555) 123-CLEAN</p>
+                  <p className="font-semibold">0420 331 350</p>
                   <p className="text-sm text-gray-300">24/7 Emergency Service</p>
                 </div>
               </div>
@@ -107,7 +107,7 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <Mail className="w-5 h-5 text-cleaning-cyan mt-1 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold">hello@cleanpro.com</p>
+                  <p className="font-semibold">services@cleandigo.com.au</p>
                   <p className="text-sm text-gray-300">Quick response guaranteed</p>
                 </div>
               </div>
@@ -136,7 +136,7 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t border-gray-700">
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
             <div className="text-sm text-gray-300">
-              © {currentYear} CleanPro. All rights reserved. Licensed & Insured.
+              © {currentYear} Cleandigo. All rights reserved. Licensed & Insured.
             </div>
             
             <div className="flex items-center space-x-6 text-sm text-gray-300">
