@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Phone, Mail } from "lucide-react";
+import { Menu, X, Phone, Mail, Sparkles, Droplets } from "lucide-react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,8 +18,9 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <div className="w-8 h-8 bg-secondary rounded-md"></div>
+            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center relative overflow-hidden">
+              <Sparkles className="w-4 h-4 text-secondary absolute top-1 left-1" />
+              <Droplets className="w-3 h-3 text-secondary absolute bottom-1 right-1" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-cleaning-dark">Cleandigo</h1>
