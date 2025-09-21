@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin, Shield, Sparkles } from "lucide-react";
 import PrivacyPolicyDialog from "./PrivacyPolicyDialog";
 import TermsOfServiceDialog from "./TermsOfServiceDialog";
 import CareersDialog from "./CareersDialog";
@@ -37,8 +37,10 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-6">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                <div className="w-8 h-8 bg-secondary rounded-md"></div>
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center relative shadow-lg">
+                <Shield className="w-6 h-6 text-secondary" />
+                <Sparkles className="w-3 h-3 text-secondary/80 absolute -top-0.5 -right-0.5" />
+                <div className="absolute inset-0 bg-secondary/10 rounded-lg"></div>
               </div>
               <div>
                 <h2 className="text-xl font-bold">Cleandigo</h2>
