@@ -46,8 +46,8 @@ const Header = () => {
               <Phone className="w-4 h-4 text-primary" />
               <span>(555) 123-CLEAN</span>
             </div>
-            <Button variant="hero" className="px-6 py-2">
-              Get Quote
+            <Button variant="hero" className="px-6 py-2" asChild>
+              <a href="#contact">Get Quote</a>
             </Button>
           </div>
 
@@ -79,8 +79,8 @@ const Header = () => {
                   <Phone className="w-4 h-4 text-primary" />
                   <span>(555) 123-CLEAN</span>
                 </div>
-                <Button variant="hero" className="w-full py-3 rounded-lg">
-                  Get Quote
+                <Button variant="hero" className="w-full py-3 rounded-lg" asChild>
+                  <a href="#contact">Get Quote</a>
                 </Button>
               </div>
             </nav>

@@ -97,8 +97,8 @@ const Services = () => {
                     </span>
                   </div>
                   
-                  <Button className="w-full bg-cleaning-blue hover:bg-cleaning-cyan text-white transition-smooth">
-                    Get Quote
+                  <Button className="w-full bg-cleaning-blue hover:bg-cleaning-cyan text-white transition-smooth" asChild>
+                    <a href="#contact">Get Quote</a>
                   </Button>
                 </div>
               </CardContent>
@@ -110,8 +110,8 @@ const Services = () => {
           <p className="text-lg text-muted-foreground mb-6">
             Need a custom cleaning solution? We're here to help!
           </p>
-          <Button variant="hero" size="xl" className="shadow-medium">
-            Contact Us for Custom Quote
+          <Button variant="hero" size="xl" className="shadow-medium" asChild>
+            <a href="#contact">Contact Us for Custom Quote</a>
           </Button>
         </div>
       </div>
