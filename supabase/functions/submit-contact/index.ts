@@ -28,10 +28,10 @@ serve(async (req) => {
       );
     }
 
-    const web3formsApiKey = Deno.env.get('WEB3FORMS_API_KEY');
+    const web3formsApiKey = Deno.env.get('WEB3FORMS_API_KEY')?.trim();
     
     if (!web3formsApiKey) {
-      console.error('WEB3FORMS_API_KEY not found');
+      console.error('WEB3FORMS_API_KEY not found or empty');
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
         { 
@@ -41,23 +41,35 @@ serve(async (req) => {
       );
     }
 
-    // Prepare the form data for Web3Forms
+    // Prepare the form data for Web3Forms according to their API guidelines
     const formData = new FormData();
     formData.append('access_key', web3formsApiKey);
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('phone', phone);
-    formData.append('subject', `CleanPro Contact Form - ${service || 'General Inquiry'}`);
-    formData.append('message', `
-Name: ${name}
-Email: ${email}
-Phone: ${phone}
-Service: ${service || 'Not specified'}
+    formData.append('name', name.trim());
+    formData.append('email', email.trim());
+    formData.append('phone', phone.trim());
+    formData.append('subject', `New CleanPro Quote Request - ${service || 'General Inquiry'}`);
+    
+    // Create a well-formatted message
+    const messageContent = `
+New quote request from CleanPro website:
 
-Message:
-${message || 'No additional message'}
-    `);
+Customer Details:
+- Name: ${name}
+- Email: ${email}
+- Phone: ${phone}
+- Service Requested: ${service || 'Not specified'}
+
+Customer Message:
+${message || 'No additional message provided'}
+
+---
+This message was sent from the CleanPro website contact form.
+    `.trim();
+    
+    formData.append('message', messageContent);
+    formData.append('replyto', email.trim());
     formData.append('from_name', 'CleanPro Website');
+    formData.append('botcheck', ''); // Anti-spam field
     
     console.log('Submitting to Web3Forms...');
     
