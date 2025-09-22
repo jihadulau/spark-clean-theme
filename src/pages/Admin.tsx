@@ -5,15 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarDays, Users, DollarSign, Download, LogOut, Home, Phone, Edit, Plus } from 'lucide-react';
+import { CalendarDays, Users, DollarSign, Download, LogOut, Home, Phone, Edit, Plus, TrendingUp, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { useAdminStats } from '@/hooks/useAdminStats';
+import { useBookings } from '@/hooks/useBookings';
+import { BookingDetailModal } from '@/components/BookingDetailModal';
+import { NewBookingModal } from '@/components/NewBookingModal';
+import { ServicesManagement } from '@/components/ServicesManagement';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 interface Booking {
   id: string;
@@ -48,117 +50,31 @@ interface Stats {
 
 const Admin: React.FC = () => {
   const { profile, signOut } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalBookings: 0, pendingBookings: 0, totalRevenue: 0, todayBookings: 0 });
-  const [loading, setLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [statusUpdate, setStatusUpdate] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
+  const { stats, loading: statsLoading, refetch: refetchStats } = useAdminStats();
+  const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchBookings();
-    fetchStats();
-  }, []);
+  const loading = statsLoading || bookingsLoading;
 
-  const fetchBookings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          profiles:customer_id (first_name, last_name, email, phone),
-          booking_items (
-            quantity,
-            services (name)
-          )
-        `)
-        .order('booking_date', { ascending: true });
+  const filteredBookings = statusFilter === 'all' 
+    ? bookings 
+    : bookings.filter(booking => booking.status === statusFilter);
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch bookings.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setBookings(data || []);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    } finally {
-      setLoading(false);
-    }
+  const openBookingDetail = (booking: any) => {
+    setSelectedBooking(booking);
+    setIsDetailModalOpen(true);
   };
 
-  const fetchStats = async () => {
-    try {
-      const { data: allBookings } = await supabase
-        .from('bookings')
-        .select('status, total_amount, booking_date');
-
-      if (allBookings) {
-        const today = new Date().toISOString().split('T')[0];
-        const stats = {
-          totalBookings: allBookings.length,
-          pendingBookings: allBookings.filter(b => b.status === 'pending').length,
-          totalRevenue: allBookings.reduce((sum, b) => sum + (b.total_amount || 0), 0),
-          todayBookings: allBookings.filter(b => b.booking_date === today).length
-        };
-        setStats(stats);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
+  const handleBookingUpdate = () => {
+    refetchBookings();
+    refetchStats();
   };
 
-  const updateBookingStatus = async () => {
-    if (!selectedBooking || !statusUpdate || !profile?.id) return;
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ 
-          status: statusUpdate as any,
-          admin_notes: adminNotes 
-        })
-        .eq('id', selectedBooking.id);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to update booking status.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Add to status history
-      await supabase
-        .from('booking_status_history')
-        .insert([{
-          booking_id: selectedBooking.id,
-          old_status: selectedBooking.status as any,
-          new_status: statusUpdate as any,
-          changed_by: profile.id,
-          notes: adminNotes || `Status changed from ${selectedBooking.status} to ${statusUpdate}`
-        }]);
-
-      toast({
-        title: "Success",
-        description: "Booking status updated successfully.",
-      });
-
-      fetchBookings();
-      setSelectedBooking(null);
-      setStatusUpdate('');
-      setAdminNotes('');
-    } catch (error) {
-      console.error('Error updating booking:', error);
-    }
-  };
 
   const exportBookingsCSV = async () => {
     setExportLoading(true);
@@ -167,7 +83,7 @@ const Admin: React.FC = () => {
       startDate.setMonth(startDate.getMonth() - 3); // Last 3 months
       const endDate = new Date();
 
-      const { data, error } = await supabase.functions.invoke('export-bookings-csv', {
+      const { data, error } = await supabase.functions.invoke('enhanced-export-bookings', {
         body: {
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0]
@@ -267,23 +183,32 @@ const Admin: React.FC = () => {
               <p className="text-muted-foreground mt-2">Manage bookings and business operations</p>
             </div>
 
-            {/* Stats Cards */}
+            {/* Enhanced Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
                 <CardContent className="flex items-center p-6">
-                  <CalendarDays className="h-8 w-8 text-blue-600" />
+                  <TrendingUp className="h-8 w-8 text-blue-600" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Total Bookings</p>
-                    <p className="text-2xl font-bold">{stats.totalBookings}</p>
+                    <p className="text-sm font-medium text-muted-foreground">New (7d)</p>
+                    <p className="text-2xl font-bold">{stats.newBookings7d}</p>
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="flex items-center p-6">
-                  <CalendarDays className="h-8 w-8 text-yellow-600" />
+                  <Users className="h-8 w-8 text-purple-600" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                    <p className="text-2xl font-bold">{stats.pendingBookings}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Assigned</p>
+                    <p className="text-2xl font-bold">{stats.assignedBookings}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-6">
+                  <AlertCircle className="h-8 w-8 text-orange-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                    <p className="text-2xl font-bold">{stats.inProgressBookings}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -291,153 +216,250 @@ const Admin: React.FC = () => {
                 <CardContent className="flex items-center p-6">
                   <DollarSign className="h-8 w-8 text-green-600" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                    <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(0)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="flex items-center p-6">
-                  <CalendarDays className="h-8 w-8 text-purple-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Today</p>
-                    <p className="text-2xl font-bold">{stats.todayBookings}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Revenue (30d)</p>
+                    <p className="text-2xl font-bold">${stats.totalRevenue30d.toFixed(0)}</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-4">
-                  <Button onClick={exportBookingsCSV} disabled={exportLoading}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {exportLoading ? "Exporting..." : "Export Bookings CSV"}
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <a href="tel:+61234567890">
-                      <Phone className="h-4 w-4 mr-2" />
-                      Call Customer
-                    </a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Bookings Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Bookings Management</CardTitle>
-                <CardDescription>
-                  View and manage all customer bookings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            {/* Additional Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="flex items-center p-6">
+                  <CalendarDays className="h-8 w-8 text-emerald-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Completed (30d)</p>
+                    <p className="text-2xl font-bold">{stats.completed30d}</p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {bookings.map((booking) => (
-                      <div key={booking.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2 flex-1">
-                            <div className="flex items-center space-x-4">
-                              <div>
-                                <h4 className="font-medium">
-                                  {booking.profiles.first_name} {booking.profiles.last_name}
-                                </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {booking.profiles.email}
-                                </p>
-                              </div>
-                              <Badge className={getStatusColor(booking.status)}>
-                                {formatStatus(booking.status)}
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="font-medium">Date & Time:</span>
-                                <p className="text-muted-foreground">
-                                  {new Date(booking.booking_date).toLocaleDateString('en-AU')} at {booking.start_time}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="font-medium">Address:</span>
-                                <p className="text-muted-foreground">
-                                  {booking.address}, {booking.suburb}, {booking.state} {booking.postcode}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="font-medium">Total:</span>
-                                <p className="text-muted-foreground font-semibold">
-                                  ${booking.total_amount.toFixed(2)} AUD
-                                </p>
-                              </div>
-                            </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-6">
+                  <Users className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Total Customers</p>
+                    <p className="text-2xl font-bold">{stats.totalCustomers}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-6">
+                  <TrendingUp className="h-8 w-8 text-yellow-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">Avg Rating</p>
+                    <p className="text-2xl font-bold">{stats.averageRating.toFixed(1)}★</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                            <div>
-                              <span className="font-medium text-sm">Services:</span>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {booking.booking_items?.map((item, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {item.services?.name} {item.quantity > 1 && `(${item.quantity}x)`}
+            {/* Enhanced Management Tabs */}
+            <Tabs defaultValue="bookings" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="bookings">Bookings</TabsTrigger>
+                <TabsTrigger value="services">Services</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="bookings" className="space-y-6">
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Bookings Management</CardTitle>
+                      <div className="flex gap-2">
+                        <Button onClick={() => setIsNewBookingModalOpen(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Booking
+                        </Button>
+                        <Button variant="outline" onClick={exportBookingsCSV} disabled={exportLoading}>
+                          <Download className="h-4 w-4 mr-2" />
+                          {exportLoading ? "Exporting..." : "Export CSV"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="text-sm font-medium">Filter by status:</span>
+                      <div className="flex gap-2">
+                        {['all', 'pending', 'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled'].map((status) => (
+                          <Button
+                            key={status}
+                            size="sm"
+                            variant={statusFilter === status ? "default" : "outline"}
+                            onClick={() => setStatusFilter(status)}
+                          >
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bookings List */}
+                    {loading ? (
+                      <LoadingSkeleton />
+                    ) : filteredBookings.length === 0 ? (
+                      <EmptyState 
+                        title="No bookings found"
+                        description={statusFilter === 'all' ? "No bookings have been created yet." : `No bookings with status "${statusFilter}".`}
+                        action={
+                          <Button onClick={() => setIsNewBookingModalOpen(true)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First Booking
+                          </Button>
+                        }
+                      />
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredBookings.map((booking) => (
+                          <div key={booking.id} className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-2 flex-1">
+                                <div className="flex items-center space-x-4">
+                                  <div>
+                                    <h4 className="font-medium">
+                                      {booking.profiles?.first_name} {booking.profiles?.last_name}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {booking.profiles?.email}
+                                    </p>
+                                  </div>
+                                  <Badge className={`${getStatusColor(booking.status)} border`}>
+                                    {formatStatus(booking.status)}
                                   </Badge>
-                                ))}
-                              </div>
-                            </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <span className="font-medium">Date & Time:</span>
+                                    <p className="text-muted-foreground">
+                                      {new Date(booking.booking_date).toLocaleDateString('en-AU')} at {booking.start_time}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Address:</span>
+                                    <p className="text-muted-foreground">
+                                      {booking.address}, {booking.suburb}, {booking.state} {booking.postcode}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Total:</span>
+                                    <p className="text-muted-foreground font-semibold">
+                                      ${booking.total_amount.toFixed(2)} AUD
+                                    </p>
+                                  </div>
+                                </div>
 
-                            {booking.admin_notes && (
-                              <div>
-                                <span className="font-medium text-sm">Admin Notes:</span>
-                                <p className="text-sm text-muted-foreground mt-1">{booking.admin_notes}</p>
-                              </div>
-                            )}
-                          </div>
+                                <div>
+                                  <span className="font-medium text-sm">Services:</span>
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                    {booking.booking_items?.map((item: any, index: number) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {item.services?.name} {item.quantity > 1 && `(${item.quantity}x)`}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
 
-                          <div className="flex space-x-2 ml-4">
-                            <Dialog>
-                              <DialogTrigger asChild>
+                                {booking.admin_notes && (
+                                  <div>
+                                    <span className="font-medium text-sm">Admin Notes:</span>
+                                    <p className="text-sm text-muted-foreground mt-1">{booking.admin_notes}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex space-x-2 ml-4">
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  onClick={() => {
-                                    setSelectedBooking(booking);
-                                    setStatusUpdate(booking.status);
-                                    setAdminNotes(booking.admin_notes || '');
-                                  }}
+                                  onClick={() => openBookingDetail(booking)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Update Booking Status</DialogTitle>
-                                  <DialogDescription>
-                                    Change the status and add notes for booking #{booking.id.slice(0, 8)}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div>
-                                    <Label htmlFor="status">Status</Label>
-                                    <Select value={statusUpdate} onValueChange={setStatusUpdate}>
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                                        <SelectItem value="assigned">Assigned</SelectItem>
-                                        <SelectItem value="en_route">En Route</SelectItem>
-                                        <SelectItem value="in_progress">In Progress</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                {booking.profiles?.phone && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    asChild
+                                  >
+                                    <a href={`tel:${booking.profiles.phone}`}>
+                                      <Phone className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="services" className="space-y-6">
+                <ServicesManagement />
+              </TabsContent>
+
+              <TabsContent value="settings" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>System Settings</CardTitle>
+                    <CardDescription>
+                      Configure system-wide settings and preferences
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">Email Notifications</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Automatic email notifications for booking updates
+                          </p>
+                        </div>
+                        <Badge variant="secondary">Enabled</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">SMS Notifications</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Send SMS updates to customers
+                          </p>
+                        </div>
+                        <Badge variant="outline">Coming Soon</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">Automated Assignments</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Automatically assign cleaners based on availability
+                          </p>
+                        </div>
+                        <Badge variant="outline">Coming Soon</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            {/* Modals */}
+            <BookingDetailModal
+              booking={selectedBooking}
+              open={isDetailModalOpen}
+              onOpenChange={setIsDetailModalOpen}
+              onUpdate={handleBookingUpdate}
+            />
+
+            <NewBookingModal
+              open={isNewBookingModalOpen}
+              onOpenChange={setIsNewBookingModalOpen}
+              onSuccess={handleBookingUpdate}
                                       </SelectContent>
                                     </Select>
                                   </div>
