@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Minus, Search, User, Calendar, Clock, MapPin, DollarSign } from 'lucide-react';
 
@@ -49,7 +48,6 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
   onOpenChange,
   onSuccess
 }) => {
-  const { profile } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -164,7 +162,7 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
   };
 
   const createBooking = async () => {
-    if (!selectedCustomer || !profile?.id || bookingItems.length === 0) return;
+    if (!selectedCustomer || bookingItems.length === 0) return;
 
     setLoading(true);
     try {
@@ -182,7 +180,7 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
           postcode,
           state,
           notes,
-          admin_notes: `Created by admin: ${profile.first_name} ${profile.last_name}`
+          admin_notes: `Created manually`
         }])
         .select()
         .single();

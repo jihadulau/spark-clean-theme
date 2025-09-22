@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import PhotoUpload from './PhotoUpload';
 import { 
@@ -42,7 +41,6 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   onOpenChange,
   onUpdate
 }) => {
-  const { profile } = useAuth();
   const { toast } = useToast();
   const [statusUpdate, setStatusUpdate] = useState(booking?.status || '');
   const [adminNotes, setAdminNotes] = useState(booking?.admin_notes || '');
@@ -76,7 +74,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   };
 
   const updateBookingStatus = async () => {
-    if (!booking || !profile?.id) return;
+    if (!booking) return;
 
     setLoading(true);
     try {
@@ -89,17 +87,6 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
         .eq('id', booking.id);
 
       if (error) throw error;
-
-      // Add to status history
-      await supabase
-        .from('booking_status_history')
-        .insert([{
-          booking_id: booking.id,
-          old_status: booking.status as any,
-          new_status: statusUpdate as any,
-          changed_by: profile.id,
-          notes: adminNotes || `Status changed from ${booking.status} to ${statusUpdate}`
-        }]);
 
       toast({
         title: "Success",
@@ -119,7 +106,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   };
 
   const assignCleaner = async () => {
-    if (!booking || !selectedCleaner || !profile?.id) return;
+    if (!booking || !selectedCleaner) return;
 
     setLoading(true);
     try {
@@ -128,7 +115,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
         .insert([{
           booking_id: booking.id,
           cleaner_id: selectedCleaner,
-          assigned_by: profile.id,
+          assigned_by: 'system', // Default value since no auth
           notes: assignmentNotes
         }]);
 
@@ -162,7 +149,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   };
 
   const markRescheduledByPhone = async () => {
-    if (!booking || !profile?.id) return;
+    if (!booking) return;
 
     setLoading(true);
     try {
@@ -176,17 +163,6 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
         .eq('id', booking.id);
 
       if (error) throw error;
-
-      // Add to status history
-      await supabase
-        .from('booking_status_history')
-        .insert([{
-          booking_id: booking.id,
-          old_status: booking.status as any,
-          new_status: booking.status as any,
-          changed_by: profile.id,
-          notes: 'Booking rescheduled by phone'
-        }]);
 
       toast({
         title: "Success",

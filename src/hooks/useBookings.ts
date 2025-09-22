@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Booking {
   id: string;
@@ -63,10 +62,8 @@ export const useBookings = (filters?: { status?: string; customerId?: string }) 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
 
   const fetchBookings = async () => {
-    if (!user) return;
 
     try {
       setLoading(true);
@@ -129,11 +126,10 @@ export const useBookings = (filters?: { status?: string; customerId?: string }) 
 
   useEffect(() => {
     fetchBookings();
-  }, [user, filters?.status, filters?.customerId]);
+  }, [filters?.status, filters?.customerId]);
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!user) return;
 
     const channel = supabase
       .channel('bookings-changes')
@@ -153,7 +149,7 @@ export const useBookings = (filters?: { status?: string; customerId?: string }) 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, []);
 
   return {
     bookings,
