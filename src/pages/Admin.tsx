@@ -14,8 +14,8 @@ import { useBookings } from '@/hooks/useBookings';
 import { BookingDetailModal } from '@/components/BookingDetailModal';
 import { NewBookingModal } from '@/components/NewBookingModal';
 import { ServicesManagement } from '@/components/ServicesManagement';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
-import { EmptyState } from '@/components/EmptyState';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 interface Booking {
   id: string;
@@ -303,14 +303,13 @@ const Admin: React.FC = () => {
                       <LoadingSkeleton />
                     ) : filteredBookings.length === 0 ? (
                       <EmptyState 
+                        icon={CalendarDays}
                         title="No bookings found"
                         description={statusFilter === 'all' ? "No bookings have been created yet." : `No bookings with status "${statusFilter}".`}
-                        action={
-                          <Button onClick={() => setIsNewBookingModalOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create First Booking
-                          </Button>
-                        }
+                        action={{
+                          label: "Create First Booking",
+                          onClick: () => setIsNewBookingModalOpen(true)
+                        }}
                       />
                     ) : (
                       <div className="space-y-4">
@@ -460,54 +459,7 @@ const Admin: React.FC = () => {
               open={isNewBookingModalOpen}
               onOpenChange={setIsNewBookingModalOpen}
               onSuccess={handleBookingUpdate}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label htmlFor="notes">Admin Notes</Label>
-                                    <Textarea
-                                      id="notes"
-                                      value={adminNotes}
-                                      onChange={(e) => setAdminNotes(e.target.value)}
-                                      placeholder="Add any notes about this booking..."
-                                      rows={3}
-                                    />
-                                  </div>
-                                  <div className="flex justify-end space-x-2">
-                                    <Button variant="outline" onClick={() => setSelectedBooking(null)}>
-                                      Cancel
-                                    </Button>
-                                    <Button onClick={updateBookingStatus}>
-                                      Update Booking
-                                    </Button>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            
-                            <Button size="sm" variant="outline" asChild>
-                              <a href={`tel:${booking.profiles.phone || booking.profiles.email}`}>
-                                <Phone className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {bookings.length === 0 && (
-                      <div className="text-center py-8">
-                        <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-foreground mb-2">No bookings yet</h3>
-                        <p className="text-muted-foreground">
-                          Bookings will appear here once customers start booking services.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            />
           </div>
         </div>
       </div>

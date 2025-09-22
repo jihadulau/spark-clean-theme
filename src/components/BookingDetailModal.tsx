@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { PhotoUpload } from './PhotoUpload';
+import PhotoUpload from './PhotoUpload';
 import { 
   Calendar, 
   Clock, 
@@ -559,8 +559,9 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                     Before and after photos for this booking
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <PhotoUpload bookingId={booking.id} />
+                <CardContent className="space-y-4">
+                  <PhotoUpload bookingId={booking.id} type="before" />
+                  <PhotoUpload bookingId={booking.id} type="after" />
                 </CardContent>
               </Card>
             </TabsContent>
