@@ -91,7 +91,6 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'customer')
         .order('first_name');
       
       setCustomers(data || []);

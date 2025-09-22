@@ -64,8 +64,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email')
-        .eq('role', 'cleaner');
+        .select('id, first_name, last_name, email');
       
       setCleaners(data || []);
     } catch (error) {
