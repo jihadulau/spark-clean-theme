@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLocalServices } from '@/hooks/useLocalServices';
 import { Plus, Minus, Search, User, Calendar, Clock, MapPin, DollarSign } from 'lucide-react';
 
 interface NewBookingModalProps {
@@ -58,7 +58,6 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
   const [customerSearch, setCustomerSearch] = useState('');
   
   // Services selection
-  const [services, setServices] = useState<Service[]>([]);
   const [bookingItems, setBookingItems] = useState<BookingItem[]>([]);
   
   // Booking details
@@ -70,10 +69,11 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
   const [state, setState] = useState('');
   const [notes, setNotes] = useState('');
 
+  const { services } = useLocalServices();
+  
   useEffect(() => {
     if (open) {
       fetchCustomers();
-      fetchServices();
     }
   }, [open]);
 
@@ -87,30 +87,31 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
   }, [selectedCustomer]);
 
   const fetchCustomers = async () => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('first_name');
-      
-      setCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-    }
-  };
-
-  const fetchServices = async () => {
-    try {
-      const { data } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
-      setServices(data || []);
-    } catch (error) {
-      console.error('Error fetching services:', error);
-    }
+    // Mock customers data
+    setCustomers([
+      {
+        id: '1',
+        first_name: 'John',
+        last_name: 'Smith',
+        email: 'john@example.com',
+        phone: '0412345678',
+        address: '123 Main Street',
+        suburb: 'Sydney',
+        postcode: '2000',
+        state: 'NSW'
+      },
+      {
+        id: '2',
+        first_name: 'Sarah',
+        last_name: 'Johnson',
+        email: 'sarah@example.com',
+        phone: '0423456789',
+        address: '456 Oak Avenue',
+        suburb: 'Melbourne',
+        postcode: '3000',
+        state: 'VIC'
+      }
+    ]);
   };
 
   const filteredCustomers = customers.filter(customer =>
@@ -164,60 +165,19 @@ export const NewBookingModal: React.FC<NewBookingModalProps> = ({
     if (!selectedCustomer || bookingItems.length === 0) return;
 
     setLoading(true);
-    try {
-      // Create booking
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .insert([{
-          customer_id: selectedCustomer.id,
-          booking_date: bookingDate,
-          start_time: startTime,
-          status: 'pending',
-          total_amount: getTotalAmount(),
-          address,
-          suburb,
-          postcode,
-          state,
-          notes,
-          admin_notes: `Created manually`
-        }])
-        .select()
-        .single();
-
-      if (bookingError) throw bookingError;
-
-      // Create booking items
-      const bookingItemsData = bookingItems.map(item => ({
-        booking_id: booking.id,
-        service_id: item.service.id,
-        quantity: item.quantity,
-        unit_price: item.service.base_price,
-        total_price: item.service.base_price * item.quantity
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('booking_items')
-        .insert(bookingItemsData);
-
-      if (itemsError) throw itemsError;
-
+    
+    // Simulate API call
+    setTimeout(() => {
       toast({
         title: "Success",
-        description: "Booking created successfully.",
+        description: "Booking created successfully (Demo mode).",
       });
 
       resetForm();
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const resetForm = () => {

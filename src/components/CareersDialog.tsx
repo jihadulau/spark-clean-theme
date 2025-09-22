@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -32,30 +31,18 @@ const CareersDialog = ({ children }: CareersDialogProps) => {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const formObject = Object.fromEntries(formData.entries());
+      // Simulate form submission (demo mode)
+      setTimeout(() => {
+        toast({
+          title: "Application Submitted! 🌟",
+          description: "Thanks! Your expression of interest is in (Demo mode). We'll review it and reach out when a suitable role pops up.",
+        });
 
-      const { data, error } = await supabase.functions.invoke('submit-contact', {
-        body: {
-          name: formObject.fullName,
-          email: formObject.email,
-          phone: formObject.mobile,
-          subject: `New Cleaning EOI — ${formObject.fullName}`,
-          form_type: "careers",
-          ...formObject
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Application Submitted! 🌟",
-        description: "Thanks! Your expression of interest is in. We'll review it and reach out when a suitable role pops up.",
-      });
-
-      // Reset form
-      (e.target as HTMLFormElement).reset();
-      setShowVisaFields(false);
+        // Reset form
+        (e.target as HTMLFormElement).reset();
+        setShowVisaFields(false);
+        setIsSubmitting(false);
+      }, 1000);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({
@@ -63,7 +50,6 @@ const CareersDialog = ({ children }: CareersDialogProps) => {
         description: "There was an error submitting your application. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

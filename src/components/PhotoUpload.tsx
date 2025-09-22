@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,44 +28,31 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ bookingId, type, onUploadSucc
     try {
       setUploading(true);
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${bookingId}/${type}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('booking-photos')
-        .upload(fileName, file);
+      // Simulate photo upload (demo mode)
+      setTimeout(() => {
+        const newPhoto: UploadedPhoto = {
+          id: `${Date.now()}`,
+          url: URL.createObjectURL(file),
+          name: file.name,
+          type
+        };
 
-      if (uploadError) {
-        throw uploadError;
-      }
+        setPhotos(prev => [...prev, newPhoto]);
+        
+        toast({
+          title: "Photo uploaded successfully (Demo mode)",
+          description: `${type} photo has been uploaded.`,
+        });
 
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('booking-photos')
-        .getPublicUrl(fileName);
-
-      const newPhoto: UploadedPhoto = {
-        id: fileName,
-        url: publicUrl,
-        name: file.name,
-        type
-      };
-
-      setPhotos(prev => [...prev, newPhoto]);
-      
-      toast({
-        title: "Photo uploaded successfully",
-        description: `${type} photo has been uploaded.`,
-      });
-
-      onUploadSuccess?.();
+        onUploadSuccess?.();
+        setUploading(false);
+      }, 1000);
     } catch (error: any) {
       toast({
         title: "Upload failed",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setUploading(false);
     }
   };
@@ -100,16 +86,15 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ bookingId, type, onUploadSucc
 
   const removePhoto = async (photo: UploadedPhoto) => {
     try {
-      const { error } = await supabase.storage
-        .from('booking-photos')
-        .remove([photo.id]);
-
-      if (error) throw error;
-
       setPhotos(prev => prev.filter(p => p.id !== photo.id));
       
+      // Revoke object URL to free memory
+      if (photo.url.startsWith('blob:')) {
+        URL.revokeObjectURL(photo.url);
+      }
+      
       toast({
-        title: "Photo removed",
+        title: "Photo removed (Demo mode)",
         description: "Photo has been successfully removed.",
       });
     } catch (error: any) {

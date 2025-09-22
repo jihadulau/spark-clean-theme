@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import PhotoUpload from './PhotoUpload';
 import { 
@@ -57,127 +56,64 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   }, [booking]);
 
   useEffect(() => {
-    fetchCleaners();
+    // Mock cleaners data
+    setCleaners([
+      { id: '1', first_name: 'Alice', last_name: 'Johnson', email: 'alice@example.com' },
+      { id: '2', first_name: 'Bob', last_name: 'Smith', email: 'bob@example.com' }
+    ]);
   }, []);
-
-  const fetchCleaners = async () => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email');
-      
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
-    }
-  };
 
   const updateBookingStatus = async () => {
     if (!booking) return;
 
     setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ 
-          status: statusUpdate as any,
-          admin_notes: adminNotes 
-        })
-        .eq('id', booking.id);
-
-      if (error) throw error;
-
+    
+    // Simulate API call
+    setTimeout(() => {
       toast({
         title: "Success",
-        description: "Booking updated successfully.",
+        description: "Booking updated successfully (Demo mode).",
       });
-
+      
       onUpdate();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const assignCleaner = async () => {
     if (!booking || !selectedCleaner) return;
 
     setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('assignments')
-        .insert([{
-          booking_id: booking.id,
-          cleaner_id: selectedCleaner,
-          assigned_by: 'system', // Default value since no auth
-          notes: assignmentNotes
-        }]);
-
-      if (error) throw error;
-
-      // Update booking status to assigned if it's confirmed
-      if (booking.status === 'confirmed') {
-        await supabase
-          .from('bookings')
-          .update({ status: 'assigned' })
-          .eq('id', booking.id);
-      }
-
+    
+    // Simulate API call
+    setTimeout(() => {
       toast({
         title: "Success",
-        description: "Cleaner assigned successfully.",
+        description: "Cleaner assigned successfully (Demo mode).",
       });
 
       setSelectedCleaner('');
       setAssignmentNotes('');
       onUpdate();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const markRescheduledByPhone = async () => {
     if (!booking) return;
 
     setLoading(true);
-    try {
-      const rescheduledNote = `Rescheduled by phone on ${new Date().toLocaleDateString('en-AU')}. ${adminNotes}`;
-      
-      const { error } = await supabase
-        .from('bookings')
-        .update({ 
-          admin_notes: rescheduledNote
-        })
-        .eq('id', booking.id);
-
-      if (error) throw error;
-
+    
+    // Simulate API call
+    setTimeout(() => {
       toast({
         title: "Success",
-        description: "Booking marked as rescheduled by phone.",
+        description: "Booking marked as rescheduled by phone (Demo mode).",
       });
 
       onUpdate();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const getStatusIcon = (status: string) => {

@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, Mail, MapPin, Clock, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -26,33 +25,15 @@ const Contact = () => {
     setIsSubmitting(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('submit-contact', {
-        body: formData
-      });
-
-      if (error) {
-        console.error('Error submitting form:', error);
-        toast({
-          title: "Error",
-          description: "Failed to send your message. Please try again or contact us directly.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.success) {
+      // Simulate form submission (demo mode)
+      setTimeout(() => {
         toast({
           title: "Quote Request Sent!",
-          description: data.message || "We'll contact you within 24 hours with your custom quote.",
+          description: "We'll contact you within 24 hours with your custom quote (Demo mode).",
         });
         setFormData({ name: "", email: "", phone: "", service: "", message: "" });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to send your message. Please try again.",
-          variant: "destructive",
-        });
-      }
+        setIsSubmitting(false);
+      }, 1000);
     } catch (error) {
       console.error('Network error:', error);
       toast({
@@ -60,7 +41,6 @@ const Contact = () => {
         description: "Please check your connection and try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
