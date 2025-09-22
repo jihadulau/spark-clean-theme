@@ -15,6 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useBookings } from '@/hooks/useBookings';
 import BookingCard from '@/components/BookingCard';
+import PhoneCTA from '@/components/PhoneCTA';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+import EmptyState from '@/components/EmptyState';
 
 interface Review {
   id: string;
@@ -269,25 +272,11 @@ const Account: React.FC = () => {
             )}
 
             {/* Call Banner */}
-            <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Phone className="h-8 w-8 text-orange-600 mr-3" />
-                    <div>
-                      <h3 className="font-semibold text-orange-900">Need to change your booking?</h3>
-                      <p className="text-sm text-orange-700">Call us for reschedules, cancellations, or special requests</p>
-                    </div>
-                  </div>
-                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
-                    <a href="tel:0420331350" className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2" />
-                      Call Now
-                    </a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <PhoneCTA 
+              variant="prominent"
+              title="Need to change your booking?"
+              description="Call us for reschedules, cancellations, or special requests"
+            />
 
             {/* Bookings Tabs */}
             <Card>
@@ -318,23 +307,19 @@ const Account: React.FC = () => {
 
                   <TabsContent value="upcoming" className="space-y-4 mt-6">
                     {loading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <div className="space-y-4">
+                        <LoadingSkeleton variant="card" count={3} />
                       </div>
                     ) : upcomingBookings.length === 0 ? (
-                      <div className="text-center py-8">
-                        <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-foreground mb-2">No upcoming bookings</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Ready to schedule your next cleaning?
-                        </p>
-                        <Button asChild>
-                          <a href="tel:0420331350">
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call to Book Now
-                          </a>
-                        </Button>
-                      </div>
+                      <EmptyState
+                        icon={CalendarDays}
+                        title="No upcoming bookings"
+                        description="Ready to schedule your next professional cleaning service?"
+                        action={{
+                          label: "Call to Book Now",
+                          href: "tel:0420331350"
+                        }}
+                      />
                     ) : (
                       <div className="space-y-4">
                         {upcomingBookings.map((booking) => (
@@ -346,13 +331,11 @@ const Account: React.FC = () => {
 
                   <TabsContent value="past" className="space-y-4 mt-6">
                     {pastBookings.length === 0 ? (
-                      <div className="text-center py-8">
-                        <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-foreground mb-2">No past bookings</h3>
-                        <p className="text-muted-foreground">
-                          Your completed bookings will appear here.
-                        </p>
-                      </div>
+                      <EmptyState
+                        icon={CalendarDays}
+                        title="No past bookings"
+                        description="Your completed cleaning services will appear here once you've used our services."
+                      />
                     ) : (
                       <div className="space-y-4">
                         {pastBookings.map((booking) => (
@@ -383,30 +366,24 @@ const Account: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="invoices" className="space-y-4 mt-6">
-                    <div className="text-center py-8">
-                      <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">Payment History</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Your invoices and payment history will be available here soon.
-                      </p>
-                      <Button variant="outline" asChild>
-                        <a href="tel:0420331350">
-                          <Phone className="h-4 w-4 mr-2" />
-                          Contact for Payment Info
-                        </a>
-                      </Button>
-                    </div>
+                    <EmptyState
+                      icon={Receipt}
+                      title="Payment History"
+                      description="Your invoices and payment history will be available here soon. For immediate payment inquiries, please give us a call."
+                      action={{
+                        label: "Contact for Payment Info",
+                        href: "tel:0420331350"
+                      }}
+                    />
                   </TabsContent>
 
                   <TabsContent value="reviews" className="space-y-4 mt-6">
                     {reviews.length === 0 ? (
-                      <div className="text-center py-8">
-                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-foreground mb-2">No reviews yet</h3>
-                        <p className="text-muted-foreground">
-                          Complete a booking to leave your first review.
-                        </p>
-                      </div>
+                      <EmptyState
+                        icon={MessageSquare}
+                        title="No reviews yet"
+                        description="Complete a cleaning service to leave your first review and help us improve our services."
+                      />
                     ) : (
                       <div className="space-y-4">
                         {reviews.map((review) => (
@@ -426,7 +403,7 @@ const Account: React.FC = () => {
                                 <span className="ml-2 text-sm font-medium">{review.rating}/5</span>
                               </div>
                               <span className="text-sm text-muted-foreground">
-                                {new Date(review.created_at).toLocaleDateString()}
+                                {new Date(review.created_at).toLocaleDateString('en-AU')}
                               </span>
                             </div>
                             {review.comment && (
