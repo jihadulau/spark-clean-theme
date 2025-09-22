@@ -109,9 +109,10 @@ profiles (user data + roles)
    ```
 
 ### **First Admin Setup**
-1. Sign up with email: `admin@cleandigo.com.au`
+1. Sign up with email: `admin@lovable.com` and password: `Admin123!`
 2. This automatically creates an admin account
-3. Update company settings in database if needed
+3. Access admin dashboard at `/admin` after login
+4. Update company settings in database if needed
 
 ## 📊 Usage Workflows
 
