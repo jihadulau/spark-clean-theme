@@ -288,6 +288,93 @@ Customers may opt out by calling [phone number]. Photos are stored
 securely and deleted after [retention period]."
 ```
 
+## 🚀 Production Setup & Access Guide
+
+### **Environment Configuration**
+
+Create a `.env.local` file with your Supabase credentials:
+
+```env
+VITE_SUPABASE_URL=https://xgazksqjjofprpdvxgss.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnYXprc3Fqam9mcHJwZHZ4Z3NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNzMwNDQsImV4cCI6MjA3Mzk0OTA0NH0.3l1aOsaTL1JwjpNd8bBca1USNodEmeJKKZAV5JDmhlY
+VITE_SUPABASE_PROJECT_ID=xgazksqjjofprpdvxgss
+```
+
+### **Database Schema Status**
+
+✅ **All required tables are live and configured:**
+
+- `profiles` (users with roles: admin, customer, cleaner)
+- `services` (Standard Cleaning, Deep Cleaning, End of Lease Cleaning)
+- `bookings` (with status tracking and history)
+- `booking_items` (service line items)
+- `booking_status_history` (audit trail)
+- `payments` (payment tracking)
+- `reviews` (customer feedback)
+- `assignments` (cleaner assignments)
+- `audit_log` (system audit trail)
+
+### **Row Level Security (RLS)**
+
+✅ **Production-ready RLS policies applied:**
+
+- **Customers**: Can only view/edit their own bookings, payments, and reviews
+- **Cleaners**: Can view assigned bookings and update status
+- **Admins**: Full access to all data and operations
+- **Public**: Can view published reviews and active services
+
+### **Admin Access Instructions**
+
+**🔐 Production Admin Login:**
+
+1. **Access the app**: Navigate to your deployed app URL
+2. **Sign In**: Go to `/signin` 
+3. **Admin Credentials**: 
+   - Email: `admin@lovable.com`
+   - Password: `Admin123!`
+4. **Admin Dashboard**: After login, access `/admin`
+
+**🎛️ Admin Dashboard Features:**
+
+- **📊 KPI Cards**: Total bookings, active customers, revenue metrics
+- **📋 Booking Management**: View, filter, update status, assign cleaners
+- **👥 User Management**: Manage customer and cleaner roles
+- **🛠️ Services CRUD**: Create, edit, activate/deactivate services
+- **📤 CSV Export**: Export bookings via Edge Function
+- **🔍 Real-time Updates**: Live booking status changes
+
+### **Demo Data Available**
+
+✅ **Services**:
+- Standard Cleaning ($120, 2 hours)
+- Deep Cleaning ($250, 4 hours)  
+- End of Lease Cleaning ($350, 5 hours)
+- + Additional services (Window Cleaning, Office Cleaning, Carpet Cleaning)
+
+✅ **Users**:
+- Admin user: `admin@lovable.com` (ready for production access)
+- Additional users can register via `/signup`
+
+### **Quick Start Commands**
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### **Production Deployment**
+
+The app is already connected to your live Supabase project and ready for production deployment. All migrations have been applied and RLS policies are active.
+
 ## 📞 Support & Contact
 
 ### **Business Contact**
@@ -296,6 +383,7 @@ securely and deleted after [retention period]."
 - **ABN**: 12 345 678 901
 
 ### **Technical Support**
+- Admin dashboard accessible at `/admin` with `admin@lovable.com`
 - Check error boundaries for detailed error information
 - Review audit logs for data consistency issues
 - Monitor Edge Function logs for integration problems
